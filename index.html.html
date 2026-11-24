@@ -1,0 +1,379 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>Kadraj Canlı</title>
+<style>
+:root{--ok:#3ddc84;--warn:#ffb300;--bad:#ff5a4f;--ink:#fff;--acc:#ffd23f}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;color:var(--ink);font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#ov{position:fixed;inset:0;width:100%;height:100%}
+#top{position:fixed;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px;align-items:center}
+#msg{max-width:100%;padding:10px 16px;border-radius:12px;background:rgba(0,0,0,.6);font-weight:700;font-size:20px;line-height:1.25;text-align:center;border:2px solid transparent}
+#msg.ok{background:var(--ok);color:#06210f}
+#msg.warn{border-color:var(--warn)}
+#msg.bad{border-color:var(--bad)}
+#pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.pill{padding:4px 10px;border-radius:99px;background:rgba(0,0,0,.55);font-size:12px;font-weight:600;color:#bbb}
+.pill.ok{color:var(--ok)}.pill.warn{color:var(--warn)}
+.pill::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:6px}
+#bottom{position:fixed;left:0;right:0;bottom:0;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;align-items:center}
+.opts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.opts button{background:rgba(0,0,0,.6);color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:99px;padding:9px 14px;font-weight:600;font-size:13px;font-family:inherit}
+.opts button.on{border-color:var(--acc);color:var(--acc)}
+#shutter{width:72px;height:72px;border-radius:50%;border:5px solid #fff;background:rgba(255,255,255,.25);padding:0}
+#shutter:active{background:#fff}
+#shutter.ready{border-color:var(--ok);background:rgba(61,220,132,.45)}
+.full{position:fixed;inset:0;background:#0b0d0e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:max(20px,env(safe-area-inset-top,0px)) 24px max(20px,env(safe-area-inset-bottom,0px));text-align:center;z-index:20}
+.full h1{margin:0;font-size:32px;letter-spacing:-.02em}
+.full p{margin:0;max-width:34ch;color:#c7cdd0;line-height:1.5;font-size:15px}
+.big{background:var(--acc);color:#14181a;border:0;border-radius:14px;padding:16px 28px;font-weight:700;font-size:17px;font-family:inherit;min-width:220px}
+.ghost{background:transparent;color:#fff;border:1.5px solid #fff;border-radius:14px;padding:14px 20px;font-weight:600;font-size:15px;font-family:inherit}
+#err{color:var(--bad);min-height:1.4em}
+#review{z-index:30;justify-content:flex-start;gap:12px;padding-top:calc(12px + env(safe-area-inset-top,0px))}
+#rc{max-width:100%;max-height:62vh;width:auto;height:auto;background:#222}
+.looks{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding-bottom:4px}
+.looks button{flex:0 0 auto;background:#1b2022;color:#fff;border:1.5px solid #333;border-radius:99px;padding:9px 14px;font-weight:600;font-size:13px;font-family:inherit}
+.looks button.on{border-color:var(--acc);color:var(--acc)}
+.rbtns{display:flex;gap:10px;width:100%;max-width:420px}
+.rbtns button{flex:1}
+#sheet{z-index:40;background:rgba(0,0,0,.9)}
+#sheet img{max-width:100%;max-height:66vh;-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<video id="cam" playsinline muted autoplay></video>
+<canvas id="ov"></canvas>
+
+<div id="top">
+  <div id="msg">Kamera açılıyor…</div>
+  <div id="pills">
+    <span class="pill" id="pLevel">Düz</span><span class="pill" id="pSize">Boyut</span><span class="pill" id="pPos">Konum</span><span class="pill" id="pLight">Işık</span><span class="pill" id="pSteady">Sabit</span>
+  </div>
+</div>
+
+<div id="bottom">
+  <div class="opts">
+    <button id="bRatio">4:5</button>
+    <button id="bMode">Karşıdan</button>
+    <button id="bTarget">Ortala</button>
+    <button id="bAuto">Oto çek: kapalı</button>
+  </div>
+  <button id="shutter" aria-label="Fotoğraf çek"></button>
+</div>
+
+<div class="full" id="start">
+  <h1>Kadraj Canlı</h1>
+  <p>Telefonu ürüne tut. Uygulama canlı olarak nereye çevireceğini, ne kadar yaklaşacağını, ışığı ve eğimi söyler. Hazır olunca çerçeve yeşile döner.</p>
+  <p>En iyi sonuç için ürünü düz renkli bir zemine koy. Her şey telefonunda işlenir, görüntü hiçbir yere gönderilmez.</p>
+  <button class="big" id="startBtn">Kamerayı aç</button>
+  <p id="err"></p>
+</div>
+
+<div class="full" id="review" hidden>
+  <canvas id="rc"></canvas>
+  <div class="looks" id="looks"></div>
+  <div class="rbtns"><button class="ghost" id="retake">Tekrar çek</button><button class="big" id="saveBtn" style="min-width:0">Kaydet</button></div>
+</div>
+
+<div class="full" id="sheet" hidden>
+  <img id="sheetImg" alt="Hazır fotoğraf">
+  <p>Fotoğrafa basılı tut ve “Fotoğraflara Ekle” seç.</p>
+  <button class="ghost" id="sheetClose">Kapat</button>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const RATIOS=[['4:5',.8],['9:16',.5625],['1:1',1],['3:4',.75]];
+const MODES=[['front','Karşıdan'],['flat','Yukarıdan']];
+const TARGETS=[['center','Ortala'],['thirds','Üçler']];
+let ri=0,mi=0,ti=0,autoOn=false,captured=false,readySince=0;
+const video=$('#cam'),ov=$('#ov'),octx=ov.getContext('2d');
+let sw=0,sh=0;
+
+function resize(){const d=Math.min(2,devicePixelRatio||1);sw=innerWidth;sh=innerHeight;ov.width=sw*d;ov.height=sh*d;octx.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',resize);resize();
+
+/* ---- çerçeve ve koordinatlar ---- */
+function cropRect(){
+  const ratio=RATIOS[ri][1];
+  const top=$('#top').getBoundingClientRect().bottom+6,bot=$('#bottom').getBoundingClientRect().top-6;
+  const aw=sw-24,ah=Math.max(120,bot-top);let w=aw,h=w/ratio;if(h>ah){h=ah;w=h*ratio}
+  return{x:(sw-w)/2,y:top+(ah-h)/2,w,h};
+}
+function toVideo(r){
+  const vw=video.videoWidth,vh=video.videoHeight,s=Math.max(sw/vw,sh/vh),ox=(vw*s-sw)/2,oy=(vh*s-sh)/2;
+  return{x:(r.x+ox)/s,y:(r.y+oy)/s,w:r.w/s,h:r.h/s};
+}
+
+/* ---- sensörler ---- */
+let ax=0,ay=0,az=0,rot=0,sensor=false,calib=false;
+let sg=/iPhone|iPad|iPod/.test(navigator.userAgent)?-1:1;
+function onMotion(e){
+  const g=e.accelerationIncludingGravity;
+  if(g&&g.x!=null&&g.y!=null&&g.z!=null){ax=g.x;ay=g.y;az=g.z;sensor=true}
+  const r=e.rotationRate;if(r&&r.alpha!=null)rot=Math.hypot(r.alpha||0,r.beta||0,r.gamma||0);
+}
+function calibrate(){
+  if(!sensor)return;
+  if(MODES[mi][0]==='front'&&Math.abs(ay)>6){sg=ay>0?1:-1;calib=true}
+  else if(MODES[mi][0]==='flat'&&Math.abs(az)>7&&Math.abs(ay)<4){sg=az>0?1:-1;calib=true}
+}
+function levelInfo(){
+  if(!sensor)return null;
+  const X=ax*sg,Y=ay*sg,Z=az*sg;
+  if(MODES[mi][0]==='front'){
+    if(Y<5)return{ok:false,far:true,th:0};
+    const th=Math.atan2(-X,Y)*180/Math.PI;return{ok:Math.abs(th)<2.5,th};
+  }
+  if(Z<6)return{ok:false,far:true,bx:0,by:0};
+  const tx=Math.atan2(X,Z)*180/Math.PI,ty=Math.atan2(Y,Z)*180/Math.PI;
+  return{ok:Math.hypot(tx,ty)<3.5,bx:clamp(X/Z,-1,1),by:clamp(Y/Z,-1,1)};
+}
+
+/* ---- görüntü analizi ---- */
+const AC=document.createElement('canvas'),actx=AC.getContext('2d',{willReadFrequently:true});
+function analyze(){
+  const r=cropRect(),v=toVideo(r),W=72,H=Math.max(24,Math.round(W*r.h/r.w));
+  if(AC.width!==W||AC.height!==H){AC.width=W;AC.height=H}
+  actx.drawImage(video,v.x,v.y,v.w,v.h,0,0,W,H);
+  const d=actx.getImageData(0,0,W,H).data,N=W*H;
+  let br=0,bg=0,bb=0,bn=0;
+  const ab=(x,y)=>{const i=(y*W+x)*4;br+=d[i];bg+=d[i+1];bb+=d[i+2];bn++};
+  for(let x=0;x<W;x++){ab(x,0);ab(x,1);ab(x,H-2);ab(x,H-1)}
+  for(let y=2;y<H-2;y++){ab(0,y);ab(1,y);ab(W-2,y);ab(W-1,y)}
+  br/=bn;bg/=bn;bb/=bn;
+  const df=new Float32Array(N);let s=0,s2=0,lum=0,lL=0,lR=0,hi=0;
+  for(let y=0,p=0;y<H;y++)for(let x=0;x<W;x++,p++){
+    const i=p*4,R=d[i],G=d[i+1],B=d[i+2],l=.299*R+.587*G+.114*B;
+    lum+=l;if(x<W/2)lL+=l;else lR+=l;if(l>250)hi++;
+    const q=Math.hypot(R-br,G-bg,B-bb);df[p]=q;s+=q;s2+=q*q;
+  }
+  const m=s/N,sd=Math.sqrt(Math.max(0,s2/N-m*m)),thr=Math.max(30,m+sd*.9);
+  const col=new Int32Array(W),row=new Int32Array(H);let cnt=0;
+  for(let p=0;p<N;p++)if(df[p]>thr){col[p%W]++;row[(p/W)|0]++;cnt++}
+  const res={found:false,lum:lum/N/255,lr:(lL-lR)/(N/2)/255,hi:hi/N};
+  if(cnt>N*.012&&cnt<N*.75){
+    const q=(arr,len,f)=>{let c=0;const t=cnt*f;for(let i=0;i<len;i++){c+=arr[i];if(c>=t)return i}return len-1};
+    const x0=q(col,W,.04),x1=q(col,W,.96),y0=q(row,H,.04),y1=q(row,H,.96);
+    res.found=true;res.cx=(x0+x1+1)/2/W;res.cy=(y0+y1+1)/2/H;res.bw=(x1-x0+1)/W;res.bh=(y1-y0+1)/H;
+  }
+  return res;
+}
+const sm={found:false,cx:.5,cy:.5,bw:0,bh:0,lum:.5,lr:0,hi:0};
+function smooth(a){
+  const k=.35;
+  sm.lum+=(a.lum-sm.lum)*k;sm.lr+=(a.lr-sm.lr)*k;sm.hi+=(a.hi-sm.hi)*k;
+  if(a.found){
+    if(sm.found){['cx','cy','bw','bh'].forEach(f=>sm[f]+=(a[f]-sm[f])*k)}
+    else{sm.cx=a.cx;sm.cy=a.cy;sm.bw=a.bw;sm.bh=a.bh}
+    sm.found=true;sm.miss=0;
+  }else{sm.miss=(sm.miss||0)+1;if(sm.miss>4)sm.found=false}
+}
+function target(){
+  if(TARGETS[ti][0]==='thirds')return{x:sm.cx<.5?1/3:2/3,y:.4};
+  return{x:.5,y:.5};
+}
+
+/* ---- yönlendirme ---- */
+function evaluate(){
+  const flat=MODES[mi][0]==='flat',verb=flat?'kaydır':'çevir';
+  const lv=levelInfo(),T=target(),P={level:lv?lv.ok:null,size:null,pos:null,light:null,steady:rot<14};
+  const msgs=[];
+  if(lv&&!lv.ok){
+    if(flat)msgs.push('Telefonu masaya paralel tut');
+    else if(lv.far)msgs.push('Telefonu dik tut');
+    else msgs.push(lv.th>0?'Telefonu biraz sola yatır':'Telefonu biraz sağa yatır');
+  }
+  if(!sm.found){msgs.push('Ürünü kadraja al, düz renkli bir zemine koy')}
+  else{
+    const s=Math.max(sm.bw,sm.bh);
+    P.size=s>=.3&&s<=.8;
+    if(s<.3)msgs.push('Biraz yaklaş');else if(s>.8)msgs.push('Biraz uzaklaş');
+    const dx=sm.cx-T.x,dy=sm.cy-T.y;P.pos=Math.abs(dx)<.07&&Math.abs(dy)<.07;
+    if(!P.pos){
+      const mag=Math.max(Math.abs(dx),Math.abs(dy))>.2?'':'biraz ';
+      if(Math.abs(dx)>=Math.abs(dy))msgs.push('Telefonu '+mag+(dx>0?'sağa ':'sola ')+verb);
+      else msgs.push('Telefonu '+mag+(dy>0?'aşağı ':'yukarı ')+verb);
+    }
+  }
+  let lightMsg=null;
+  if(sm.lum<.22)lightMsg='Işık az, pencereye veya lambaya yaklaş';
+  else if(sm.lum>.85)lightMsg='Çok parlak, ışığı azalt';
+  else if(sm.hi>.06)lightMsg='Parlama var, ışığı yumuşat veya açıyı değiştir';
+  else if(Math.abs(sm.lr)>.16)lightMsg='Işık bir yandan geliyor, gölge olabilir';
+  P.light=!lightMsg;if(lightMsg)msgs.push(lightMsg);
+  if(!P.steady)msgs.push('Telefonu sabit tut');
+  const ready=sm.found&&P.level!==false&&P.size&&P.pos&&P.light&&P.steady;
+  return{msg:ready?'Hazır, çekebilirsin':(msgs[0]||'Kadrajı ayarla'),ready,P,T,lv};
+}
+function paint(ev){
+  const m=$('#msg');m.textContent=ev.msg;m.className=ev.ready?'ok':(sm.found?'warn':'bad');
+  const set=(id,v)=>{$(id).className='pill'+(v===true?' ok':v===false?' warn':'')};
+  set('#pLevel',ev.P.level);set('#pSize',ev.P.size);set('#pPos',ev.P.pos);set('#pLight',ev.P.light);set('#pSteady',ev.P.steady);
+  $('#shutter').className=ev.ready?'ready':'';
+}
+
+/* ---- çizim ---- */
+function drawOverlay(ev){
+  const r=cropRect();octx.clearRect(0,0,sw,sh);
+  octx.fillStyle='rgba(0,0,0,.5)';octx.beginPath();octx.rect(0,0,sw,sh);octx.rect(r.x,r.y,r.w,r.h);octx.fill('evenodd');
+  const col=ev.ready?'#3ddc84':'rgba(255,255,255,.85)';
+  octx.strokeStyle=col;octx.lineWidth=ev.ready?4:2;octx.strokeRect(r.x,r.y,r.w,r.h);
+  octx.strokeStyle='rgba(255,255,255,.28)';octx.lineWidth=1;octx.beginPath();
+  for(const f of[1/3,2/3]){octx.moveTo(r.x+r.w*f,r.y);octx.lineTo(r.x+r.w*f,r.y+r.h);octx.moveTo(r.x,r.y+r.h*f);octx.lineTo(r.x+r.w,r.y+r.h*f)}
+  octx.stroke();
+  const tx=r.x+ev.T.x*r.w,ty=r.y+ev.T.y*r.h,rr=Math.min(r.w,r.h)*.07;
+  octx.strokeStyle='#ffd23f';octx.lineWidth=2.5;octx.setLineDash([6,5]);octx.beginPath();octx.arc(tx,ty,rr,0,7);octx.stroke();octx.setLineDash([]);
+  if(sm.found){
+    const px=r.x+sm.cx*r.w,py=r.y+sm.cy*r.h,okc=ev.P.pos?'#3ddc84':'#ffb300';
+    octx.strokeStyle=okc;octx.lineWidth=1.5;octx.setLineDash([4,4]);
+    octx.strokeRect(px-sm.bw*r.w/2,py-sm.bh*r.h/2,sm.bw*r.w,sm.bh*r.h);octx.setLineDash([]);
+    if(!ev.P.pos){octx.beginPath();octx.moveTo(px,py);octx.lineTo(tx,ty);octx.stroke()}
+    octx.fillStyle=okc;octx.beginPath();octx.arc(px,py,8,0,7);octx.fill();
+  }
+  const lv=ev.lv;
+  if(lv&&MODES[mi][0]==='front'&&!lv.far){
+    const cx=r.x+r.w/2,cy=r.y+r.h/2,L=Math.min(r.w*.28,110),a=-lv.th*Math.PI/180;
+    octx.strokeStyle=lv.ok?'#3ddc84':'#fff';octx.lineWidth=3;octx.beginPath();
+    octx.moveTo(cx-L*Math.cos(a),cy-L*Math.sin(a));octx.lineTo(cx+L*Math.cos(a),cy+L*Math.sin(a));octx.stroke();
+    octx.strokeStyle='rgba(255,255,255,.6)';octx.lineWidth=2;octx.beginPath();
+    octx.moveTo(cx-L-18,cy);octx.lineTo(cx-L-4,cy);octx.moveTo(cx+L+4,cy);octx.lineTo(cx+L+18,cy);octx.stroke();
+  }else if(lv&&MODES[mi][0]==='flat'){
+    const gx=r.x+r.w-46,gy=r.y+46,R=28;
+    octx.strokeStyle='rgba(255,255,255,.8)';octx.lineWidth=2;octx.beginPath();octx.arc(gx,gy,R,0,7);octx.moveTo(gx-R,gy);octx.lineTo(gx+R,gy);octx.moveTo(gx,gy-R);octx.lineTo(gx,gy+R);octx.stroke();
+    octx.fillStyle=lv.ok?'#3ddc84':'#ffb300';octx.beginPath();octx.arc(gx+(lv.bx||0)*R*1.6,gy-(lv.by||0)*R*1.6,8,0,7);octx.fill();
+  }
+}
+
+/* ---- döngü ---- */
+let last=0,ev=null;
+function loop(t){
+  requestAnimationFrame(loop);
+  if(!video.videoWidth||!$('#start').hidden&&false)return;
+  if(captured)return;
+  if(t-last>140){last=t;smooth(analyze());ev=evaluate();paint(ev);
+    if(ev.ready){if(!readySince)readySince=t;if(autoOn&&t-readySince>900)capture()}else readySince=0}
+  if(ev)drawOverlay(ev);
+}
+
+/* ---- çekim ve otomatik düzeltme ---- */
+const LOOKS={
+  auto:{n:'Otomatik',con:8,sat:6,warm:0,fade:4,grain:8,vig:10,sh:[0,0,0],hi:[0,0,0],lv:true},
+  gold:{n:'Altın',con:10,sat:14,warm:30,fade:12,grain:22,vig:16,sh:[.01,0,-.015],hi:[.03,.015,-.02],lv:true},
+  soft:{n:'Portre',con:-8,sat:-6,warm:16,fade:22,grain:14,vig:8,sh:[.01,.005,.01],hi:[.02,.01,0],lv:true},
+  faded:{n:'Soluk',con:-14,sat:-24,warm:10,fade:42,grain:30,vig:16,sh:[.01,.01,.015],hi:[.02,.01,0],lv:true},
+  bw:{n:'Siyah beyaz',con:20,sat:0,warm:0,fade:8,grain:30,vig:18,sh:[0,0,0],hi:[0,0,0],mono:true,lv:true},
+  orig:{n:'Orijinal',con:0,sat:0,warm:0,fade:0,grain:0,vig:0,sh:[0,0,0],hi:[0,0,0],lv:false}
+};
+let raw=null,look='auto',prev=null;
+function hash(x,y){let h=Math.imul(x,374761393)+Math.imul(y,668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+function process(srcCv,key,maxSide){
+  const k=Math.min(1,maxSide/Math.max(srcCv.width,srcCv.height)),W=Math.round(srcCv.width*k),H=Math.round(srcCv.height*k);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingQuality='high';x.drawImage(srcCv,0,0,W,H);
+  const L=LOOKS[key];if(!L.lv&&key==='orig')return c;
+  const id=x.getImageData(0,0,W,H),d=id.data;
+  /* otomatik pozlama ve seviye */
+  const hist=new Uint32Array(256);let sum=0,n=0;
+  for(let i=0;i<d.length;i+=16){const l=Math.round(.299*d[i]+.587*d[i+1]+.114*d[i+2]);hist[l]++;sum+=l;n++}
+  const mean=sum/n/255;let acc=0,p1=0,p99=255;
+  for(let i=0;i<256;i++){acc+=hist[i];if(acc>=n*.01){p1=i;break}}
+  acc=0;for(let i=0;i<256;i++){acc+=hist[i];if(acc>=n*.99){p99=i;break}}
+  const g=(mean<.3||mean>.7)?clamp(.42/mean,.85,1.3):1;
+  const lo=p1/255,hi=Math.max(p99/255,lo+.2),mix=.6;
+  const cc=1+L.con/100*.8,sa=1+L.sat/100,wm=L.warm/100*.07,fd=L.fade/100*.14,gr=L.grain/100*.22,vg=L.vig/100*.85,gs=Math.max(1,Math.round(W/900));
+  for(let y=0;y<H;y++){const ny=(y/H-.5)*2,gy=Math.floor(y/gs);
+    for(let xx=0;xx<W;xx++){
+      const i=(y*W+xx)*4;
+      let r=d[i]/255*g,gg=d[i+1]/255*g,b=d[i+2]/255*g;
+      r+=((r-lo)/(hi-lo)-r)*mix;gg+=((gg-lo)/(hi-lo)-gg)*mix;b+=((b-lo)/(hi-lo)-b)*mix;
+      r=(r-.5)*cc+.5;gg=(gg-.5)*cc+.5;b=(b-.5)*cc+.5;
+      let l=.299*r+.587*gg+.114*b;
+      r=l+(r-l)*sa;gg=l+(gg-l)*sa;b=l+(b-l)*sa;
+      if(L.mono){r=gg=b=l}
+      r+=wm;gg+=wm*.15;b-=wm;
+      l=clamp(.299*r+.587*gg+.114*b);const lw=1-l;
+      r+=L.sh[0]*lw+L.hi[0]*l;gg+=L.sh[1]*lw+L.hi[1]*l;b+=L.sh[2]*lw+L.hi[2]*l;
+      if(fd){r=fd+r*(1-fd);gg=fd+gg*(1-fd);b=fd+b*(1-fd)}
+      if(gr){const a=(hash(Math.floor(xx/gs),gy)-.5)*2*gr*(1-Math.abs(l-.5)*1.1);r+=a;gg+=a;b+=a}
+      if(vg){const dx=(xx/W-.5)*2,f=1-vg*(dx*dx+ny*ny)/2;r*=f;gg*=f;b*=f}
+      d[i]=r*255;d[i+1]=gg*255;d[i+2]=b*255;
+    }}
+  x.putImageData(id,0,0);return c;
+}
+function capture(){
+  if(captured||!video.videoWidth)return;captured=true;
+  const v=toVideo(cropRect()),k=Math.min(1,2400/Math.max(v.w,v.h));
+  raw=document.createElement('canvas');raw.width=Math.round(v.w*k);raw.height=Math.round(v.h*k);
+  raw.getContext('2d').drawImage(video,v.x,v.y,v.w,v.h,0,0,raw.width,raw.height);
+  prev=document.createElement('canvas');
+  const pk=Math.min(1,1100/Math.max(raw.width,raw.height));prev.width=Math.round(raw.width*pk);prev.height=Math.round(raw.height*pk);
+  prev.getContext('2d').drawImage(raw,0,0,prev.width,prev.height);
+  look='auto';buildLooks();showLook();$('#review').hidden=false;
+}
+function buildLooks(){
+  const el=$('#looks');el.innerHTML='';
+  Object.keys(LOOKS).forEach(k=>{const b=document.createElement('button');b.textContent=LOOKS[k].n;if(k===look)b.className='on';
+    b.onclick=()=>{look=k;buildLooks();showLook()};el.appendChild(b)});
+}
+function showLook(){
+  const out=process(prev,look,1100),rc=$('#rc');rc.width=out.width;rc.height=out.height;rc.getContext('2d').drawImage(out,0,0);
+}
+$('#retake').onclick=()=>{$('#review').hidden=true;captured=false;readySince=0};
+$('#saveBtn').onclick=async()=>{
+  const b=$('#saveBtn');b.disabled=true;b.textContent='Hazırlanıyor…';
+  try{
+    const out=process(raw,look,2400);
+    const blob=await new Promise(r=>out.toBlob(r,'image/jpeg',.92));
+    const file=new File([blob],'kadraj-'+Date.now()+'.jpg',{type:'image/jpeg'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file]});return}catch(e){if(e&&e.name==='AbortError')return}
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();
+    $('#sheetImg').src=url;$('#sheet').hidden=false;
+  }finally{b.disabled=false;b.textContent='Kaydet'}
+};
+$('#sheetClose').onclick=()=>{$('#sheet').hidden=true};
+
+/* ---- düğmeler ---- */
+$('#shutter').onclick=capture;
+$('#bRatio').onclick=e=>{ri=(ri+1)%RATIOS.length;e.target.textContent=RATIOS[ri][0];sm.found=false};
+$('#bMode').onclick=e=>{mi=(mi+1)%MODES.length;e.target.textContent=MODES[mi][1];calib=false;calibrate()};
+$('#bTarget').onclick=e=>{ti=(ti+1)%TARGETS.length;e.target.textContent=TARGETS[ti][1]};
+$('#bAuto').onclick=e=>{autoOn=!autoOn;e.target.textContent='Oto çek: '+(autoOn?'açık':'kapalı');e.target.className=autoOn?'on':''};
+
+/* ---- başlat ---- */
+$('#startBtn').onclick=async()=>{
+  const err=$('#err');err.textContent='';
+  try{
+    if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+      try{await DeviceMotionEvent.requestPermission()}catch(e){}
+    }
+    addEventListener('devicemotion',onMotion);
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){err.textContent='Bu sayfa güvenli (https) bir adreste açılmalı.';return}
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+    video.srcObject=stream;await video.play();
+    $('#start').hidden=true;
+    setInterval(()=>{if(!calib)calibrate()},500);
+    requestAnimationFrame(loop);
+  }catch(e){
+    err.textContent=(e&&e.name==='NotAllowedError')?'Kamera izni verilmedi. Safari ayarlarından bu siteye kamera izni ver.':'Kamera açılamadı. Sayfayı yenileyip tekrar dene.';
+  }
+};
+})();
+</script>
+</body>
+</html>
+
+</body></html>
